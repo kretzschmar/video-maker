@@ -1,7 +1,7 @@
-const readline = require('readline-sync')
-const state = require('./state.js')
+import readline from "readline-sync"
+import state from "./state.js"
 
-function robot() {
+export default (async () => {
   const content = {
     maximumSentences: 7
   }
@@ -21,7 +21,4 @@ function robot() {
 
     return selectedPrefixText
   }
-
-}
-
-module.exports = robot
+})

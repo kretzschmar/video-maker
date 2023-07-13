@@ -1,5 +1,10 @@
-const fs = require('fs')
-const contentFilePath = './content.json'
+import fs from "fs"
+import { fileURLToPath } from "url"
+import path from "path"
+
+const modulePath = fileURLToPath(import.meta.url)
+const currentDirectory = path.dirname(modulePath)
+const contentFilePath = path.join(currentDirectory, "..", "content.json")
 const scriptFilePath = './content/after-effects-script.js'
 
 function save(content) {
@@ -19,8 +24,4 @@ function load() {
   return contentJson
 }
 
-module.exports = {
-  save,
-  saveScript,
-  load
-}
+export default { save, load, saveScript }
