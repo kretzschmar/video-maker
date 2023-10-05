@@ -2,6 +2,7 @@
 import sentenceBoundaryDetection from "sbd"
 import state from "./state.js"
 import getFromWikipedia from "./wikipedia.js"
+import keywordExtractor from "keyword-extractor";
 
 export default (async () => {
   console.log('> [text-robot] Starting...')
@@ -49,12 +50,22 @@ export default (async () => {
 
     const sentences = sentenceBoundaryDetection.sentences(content.sourceContentSanitized)
     sentences.forEach((sentence) => {
+      
       content.sentences.push({
         text: sentence,
-        keywords: [],
+        keywords: getKeyWords(sentence),
         images: []
       })
-    })
+    });  
+  }
+
+  function getKeyWords(sentence){
+    return keywordExtractor.extract(sentence,{
+      language:"english",
+      remove_digits: true,
+      return_changed_case:true,
+      remove_duplicates: true
+    }).slice(0,2);
   }
 
   function limitMaximumSentences(content) {

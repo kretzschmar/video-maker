@@ -11,12 +11,14 @@ export default (async () => {
     const content = state.load()
 
     await fetchImagesOfAllSentences(content)
-    await downloadAllImages(content)
+    //await downloadAllImages(content)
 
     state.save(content)
 
     async function fetchImagesOfAllSentences(content) {
-      for (let sentenceIndex = 0; sentenceIndex < content.sentences.length; sentenceIndex++) {
+      console.log('aquiii');
+      console.log(content);
+      /*for (let sentenceIndex = 0; sentenceIndex < content.sentences.length; sentenceIndex++) {
         let query
 
         if (sentenceIndex === 0) {
@@ -45,7 +47,7 @@ export default (async () => {
         return item.link
       })
 
-      return imagesUrl
+      return imagesUrl*/
     }
 
     async function downloadAllImages(content) {
