@@ -54,7 +54,6 @@ export default (async () => {
       content.sentences.push({
         text: sentence,
         keywords: getKeyWords(sentence),
-        images: []
       })
     });  
   }

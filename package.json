@@ -20,6 +20,7 @@
   "homepage": "https://github.com/filipedeschamps/video-maker#readme",
   "dependencies": {
     "algorithmia": "^0.3.10",
+    "axios": "^1.6.0",
     "express": "^4.16.4",
     "gm": "^1.23.1",
     "googleapis": "^38.0.0",
