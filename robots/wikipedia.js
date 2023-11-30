@@ -1,4 +1,4 @@
-import wiki from "wikipedia" // npm i wikipedia
+import wiki from "wikipedia" 
 
 async function getFromWikipedia(pageName) {
     const pageContent = {}
