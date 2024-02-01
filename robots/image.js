@@ -13,7 +13,6 @@ export default (async () => {
   let config = await ReadConfigFile("pexel.json");
   
   const resultGetPexelPictureWorks = await GetPictureInformation(config, searchPicture,"Pexel");
-   console.log(resultGetPexelPictureWorks);
   if(!resultGetPexelPictureWorks){
     config = await ReadConfigFile("unsplash.json");
     await GetPictureInformation(config, searchPicture,"Unsplash");
@@ -38,11 +37,11 @@ export default (async () => {
     let result = true;
     const { API_KEY, URL_PROVIDER } = config;
     
-    //To do Criar uma função para monstar o header de acordo com o provider
-    const headers = {
-      Authorization: API_KEY
-    };
+    const headers = GetHeaderInformation(API_KEY, providerName);
 
+    if(headers.Authorization == null || headers.Authorization == "")
+      throw new Error('Header nor defied')
+   
     const params = {
       query: searchPicture,
       per_page: 1
@@ -56,7 +55,7 @@ export default (async () => {
           await SavePexelFilePictureInformation(data, searchPicture);
         break;
         case "Unsplash":
-          console.log("ainnnnnnnnnnnnnnnnnnnnn");
+         await SaveUnsplashFilePictureInformation(data, searchPicture);
          break;
          default:
           result = false;
@@ -72,32 +71,47 @@ export default (async () => {
 
   async function SavePexelFilePictureInformation(data) {
     if (data.photos != undefined && data.photos.length) {
-      let urlPhoto = data.photos.find(x => x !== undefined);
-      console.log(urlPhoto.src.tiny);
-
-      let file;
-      try {
-        file = createWriteStream(`${searchPicture}.jpg`);
-        try {
-          const response = await fetch(urlPhoto.src.tiny);
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-
-          await new Promise((resolve, reject) => {
-            response.body.pipe(file);
-            file.on('finish', resolve);
-            file.on('error', reject);
-          });
-
-          console.log(`File saved successfully`);
-        } catch (error) {
-          console.error('Error fetching or saving file:', error);
-        }
-      } finally {
-        file?.close();
+      let urlOjbect = data.photos.find(x => x !== undefined);
+      if (urlOjbect != null){
+        let urlPhoto = urlOjbect.src.tiny;
+        await SaveFile(urlPhoto);
       }
+    }
+  }
+
+  async function SaveUnsplashFilePictureInformation(data) {
+    if (data.results != undefined && data.results.length) {
+      let urlOjbect = data.results.find(x => x !== undefined);
+      if (urlOjbect != null){
+        let urlPhoto = urlOjbect.urls.thumb;
+        await SaveFile(urlPhoto);
+      }
+    }
+  }
+
+  async function SaveFile(urlPhoto) {
+    let file;
+    try {
+      file = createWriteStream(`${searchPicture}.jpg`);
+      try {
+        const response = await fetch(urlPhoto);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        await new Promise((resolve, reject) => {
+          response.body.pipe(file);
+          file.on('finish', resolve);
+          file.on('error', reject);
+        });
+
+        console.log(`File saved successfully`);
+      } catch (error) {
+        console.error('Error fetching or saving file:', error);
+      }
+    } finally {
+      file?.close();
     }
   }
 
@@ -107,4 +121,22 @@ export default (async () => {
     if (typeof data === 'string') return JSON.parse(data);
     return {};
   }
+
+  function GetHeaderInformation(API_KEY, providerName) { 
+    
+    switch(providerName){
+      case "Pexel":
+        return {
+          Authorization: API_KEY
+        };
+        case"Unsplash":
+        return{
+            Authorization:`Client-ID ${API_KEY}`
+        }
+        default:return{
+          Authorization:""
+        }
+     }
+  }
 });
+
