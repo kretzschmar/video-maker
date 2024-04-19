@@ -1,10 +1,10 @@
-import fs from "fs"
-import { fileURLToPath } from "url"
-import path from "path"
+import fs from 'fs'
+import { fileURLToPath } from 'url'
+import path from 'path'
 
 const modulePath = fileURLToPath(import.meta.url)
 const currentDirectory = path.dirname(modulePath)
-const contentFilePath = path.join(currentDirectory, "..", "content.json")
+const contentFilePath = path.join(currentDirectory, '..', 'content.json')
 const scriptFilePath = './content/after-effects-script.js'
 
 function save(content) {

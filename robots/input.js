@@ -1,18 +1,15 @@
-import readline from "readline-sync"
-import state from "./state.js"
+import readline from 'readline-sync'
+import state from './state.js'
+import input from './inputhandler.js'
 
 export default (async () => {
   const content = {
     maximumSentences: 7
   }
 
-  content.searchTerm = askAndReturnSearchTerm()
-  content.prefix = askAndReturnPrefix()
-  state.save(content)
-
-  function askAndReturnSearchTerm() {
-    return readline.question('Type a Wikipedia search term: ')
-  }
+  content.prefix = input.getSearchInput('Type a Wikipedia search term: ');
+  content.searchTerm = askAndReturnPrefix()
+   state.save(content)
 
   function askAndReturnPrefix() {
     const prefixes = ['Who is', 'What is', 'The history of']

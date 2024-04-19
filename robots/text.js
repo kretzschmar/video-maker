@@ -1,8 +1,8 @@
 
-import sentenceBoundaryDetection from "sbd"
-import state from "./state.js"
-import getFromWikipedia from "./wikipedia.js"
-import keywordExtractor from "keyword-extractor";
+import sentenceBoundaryDetection from 'sbd'
+import state from './state.js'
+import getFromWikipedia from './wikipedia.js'
+import keywordExtractor from 'keyword-extractor';
 
 export default (async () => {
   console.log('> [text-robot] Starting...')
