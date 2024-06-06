@@ -21,13 +21,20 @@
   "dependencies": {
     "algorithmia": "^0.3.10",
     "axios": "^1.6.0",
+    "aws-sdk": "^2.1472.0",
     "express": "^4.16.4",
+    "fluent-ffmpeg": "^2.1.2",
     "gm": "^1.23.1",
     "googleapis": "^38.0.0",
+    "google-tts-api": "^2.0.2",
     "image-downloader": "^3.4.2",
+    "jimp": "^0.22.8",
     "keyword-extractor": "^0.0.27",
+    "open": "^9.1.0",
+    "progress": "^2.0.3",
     "readline-sync": "^1.4.9",
     "sbd": "^1.0.14",
+    "videoshow": "^0.1.12",
     "watson-developer-cloud": "^3.18.2",
     "wikipedia": "^2.1.0"
   }
