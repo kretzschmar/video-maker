@@ -24,4 +24,8 @@ function load() {
   return contentJson
 }
 
-export default { save, load, saveScript }
+export default { 
+  save, 
+  load, 
+  saveScript 
+}

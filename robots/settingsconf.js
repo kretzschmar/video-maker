@@ -1,6 +1,3 @@
-import dotenv from "dotenv"
-
-dotenv.config()
 
 const googleSearchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
