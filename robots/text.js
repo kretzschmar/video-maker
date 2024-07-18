@@ -16,7 +16,8 @@ export default (async () => {
   state.save(content)
 
   async function fetchContentFromWikipedia(content) {
-    console.log('> [text-robot] Fetching content from Wikipedia')   
+    console.log('> [text-robot] Fetching content from Wikipedia')
+    console.log(content)
     content.sourceContentOriginal = await getFromWikipedia(content.searchTerm)
     console.log('> [text-robot] Fetching done!')
   }  

@@ -6,7 +6,6 @@ import googleTTS from "google-tts-api"
 import AWS from "aws-sdk"
 import path from "path"
 
-import { mergeAudios, changeAudioVolume, composeAudios, cutAudio } from "./audio-editor.js"
 import { choiceAtRandom } from "./random.js"
 import createLogger from "./logger.js"
 import state from "./state.js"
@@ -16,15 +15,79 @@ const currentDirectory = path.dirname(modulePath)
 
 export default (async () => {
     
-    let config = await file.readConfigFile('aws.json');
-    const { awsAccessKeyId, awsSecretAccessKey, awsRegion } = config; 
-    AWS.config.update({
-        accessKeyId: awsAccessKeyId,
-        secretAccessKey: awsSecretAccessKey,
-        region: awsRegion
-    });
+    const logger = createLogger("audio")
+    const content = state.load()
 
-    const Polly = new AWS.Polly()
+    logger.log("Starting...")
+
+    await createSpeechAudioForSentences(content)
+    await createSpeechAudioForVideo(content)
+    await chooseAndManipulateMusic(content)
+    await joinMusicWithSpeechAudio(content)
+
+    state.save(content)
+
+    logger.log("Execution finished!")
+
+    async function createSpeechAudioForSentences(content) {
+        logger.log("Creating voice speech for sentences...")
+
+        const sentences = content.sentences
+       
+        for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
+            const sentenceText = sentences[sentenceIndex].text
+            content.sentences[sentenceIndex].audioFilePath = await createSpeechAudioForSentence(sentenceIndex, sentenceText)
+            content.sentences[sentenceIndex].duration = await new Promise((resolve, reject) => {
+                ffmpeg.ffprobe(content.sentences[sentenceIndex].audioFilePath, (error, metadata) => {
+                    if (error) return reject(error)
+                    return resolve(metadata.format.duration)
+                })
+            })
+        }
+
+        async function createSpeechAudioForSentence(sentenceIndex, sentenceText) {
+            logger.log(`Creating speech audio for the index sentence: ${sentenceIndex}...`)
+
+            const outputDirPath = path.join(currentDirectory, "..", "content", "new-project", "audios", "sentences")
+            if (!fs.existsSync(outputDirPath)) await fs.promises.mkdir(outputDirPath, { recursive: true })
+            const outputFileName = `${sentenceIndex}.mp3`
+            const outputFilePath = path.join(outputDirPath, outputFileName)
+
+            var createAudioFileWithGooglettsWorks = await createAudioFile(sentenceText,outputFilePath,'Google-tts');
+
+            if(!createAudioFileWithGooglettsWorks){
+                await createAudioFile(sentenceText,outputFilePath,'Aws-polly');
+            }
+            
+            logger.log(`Speech audio for the index sentence ${sentenceIndex} created as successfully!`)
+
+            return outputFilePath
+        }
+
+        logger.log("Creation of the sentence audios was done successfully!")
+    }
+    
+    async function createAudioFile(text, filePath, providerName, language = "en"){
+        let result = true;
+        
+        try {
+        switch (providerName) {
+            case 'Google-tts':
+                await createAudioFileWithGoogleTTS(text, filePath, language)
+              break;
+            case 'Aws-polly':
+                await createAudioFileWithAWSPolly(text, filePath, language)
+              break;
+            default:
+              result = false;
+          }
+        }
+        catch (error) {
+          result = false;
+          return result;
+        }
+        return result;
+    }
 
     function createAudioFileWithGoogleTTS(text, filePath, language = "en") {
         filePath = path.resolve(filePath)
@@ -41,12 +104,22 @@ export default (async () => {
         })
     }
 
-    function createAudioFileWithAWSPolly(text, filePath, language = "en") {
+    async function createAudioFileWithAWSPolly(text, filePath, language = "en") {
         const params = {
             Text: text,
             OutputFormat: "mp3",
             VoiceId: getAWSPollyVoiceId(language)
         }
+
+        let config = await file.readConfigFile('aws.json');
+        const { awsAccessKeyId, awsSecretAccessKey, awsRegion } = config; 
+        AWS.config.update({
+            accessKeyId: awsAccessKeyId,
+            secretAccessKey: awsSecretAccessKey,
+            region: awsRegion
+        });
+    
+        const Polly = new AWS.Polly()
 
         return new Promise((resolve, reject) => {
             Polly.synthesizeSpeech(params, (err, data) => {
@@ -75,58 +148,6 @@ export default (async () => {
             es: "Lucia"
         }
         return languageMap[language] || "Joanna"
-    }
-    
-    const logger = createLogger("audio")
-    const content = state.load()
-
-    logger.log("Starting...")
-
-    await createSpeechAudioForSentences(content)
-    await createSpeechAudioForVideo(content)
-    await chooseAndManipulateMusic(content)
-    await joinMusicWithSpeechAudio(content)
-
-    state.save(content)
-
-    logger.log("Execution finished!")
-
-    async function createSpeechAudioForSentences(content) {
-        logger.log("Creating voice speech for sentences...")
-
-        const sentences = content.sentences
-
-        for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
-            const sentenceText = sentences[sentenceIndex].text
-            content.sentences[sentenceIndex].audioFilePath = await createSpeechAudioForSentence(content.text2speechProvider, sentenceIndex, sentenceText)
-            content.sentences[sentenceIndex].duration = await new Promise((resolve, reject) => {
-                ffmpeg.ffprobe(content.sentences[sentenceIndex].audioFilePath, (error, metadata) => {
-                    if (error) return reject(error)
-                    return resolve(metadata.format.duration)
-                })
-            })
-        }
-
-        async function createSpeechAudioForSentence(text2speechProvider, sentenceIndex, sentenceText) {
-            logger.log(`Creating speech audio for the index sentence: ${sentenceIndex}...`)
-
-            const outputDirPath = path.join(currentDirectory, "..", "content", "new-project", "audios", "sentences")
-            if (!fs.existsSync(outputDirPath)) await fs.promises.mkdir(outputDirPath, { recursive: true })
-            const outputFileName = `${sentenceIndex}.mp3`
-            const outputFilePath = path.join(outputDirPath, outputFileName)
-
-            if (text2speechProvider === "google-tts") {
-                await createAudioFileWithGoogleTTS(sentenceText, outputFilePath, content.language)
-            } else if (text2speechProvider === "aws-polly") {
-                await createAudioFileWithAWSPolly(sentenceText, outputFilePath, content.language)
-            }
-            
-            logger.log(`Speech audio for the index sentence ${sentenceIndex} created as successfully!`)
-
-            return outputFilePath
-        }
-
-        logger.log("Creation of the sentence audios was done successfully!")
     }
 
     async function createSpeechAudioForVideo(content) {
@@ -159,7 +180,8 @@ export default (async () => {
             const musicFileNames = await fs.promises.readdir(musicsDirPath)
             const musicFilePaths = musicFileNames.map(musicFileName => path.join(musicsDirPath, musicFileName))
             content.originalMusicFilePath = choiceAtRandom(musicFilePaths)
-
+            console.log(content.originalMusicFilePat); 
+            
             logger.log(`Chosen music: ${path.basename(content.originalMusicFilePath)}`)
         }
 
@@ -215,5 +237,85 @@ export default (async () => {
 
             logger.log("Successfully cut!")
         }
-    }   
+    }
+    
+    function composeAudios(outputFilePath, ...audioFilePaths) {
+        return new Promise((resolve, reject) => {
+            const audio = ffmpeg()
+                .on("error", (error) => {
+                    console.log(error)
+                    return reject(
+                        new Error(`Error composing the audios: ${error.message}`)
+                    )
+                })
+                .on("end", () => {
+                    return resolve()
+                })
+        
+                for (let i = 0; i < audioFilePaths.length; i++) {
+                    audio.input(audioFilePaths[i])
+                }
+        
+                audio.complexFilter(`[0:a][1:a]amix=inputs=${audioFilePaths.length}:duration=longest`)
+    
+            audio.save(outputFilePath)
+        })
+    }
+    
+    function mergeAudios(outputFilePath, ...audioFilePaths) {
+        return new Promise((resolve, reject) => {
+            const audio = ffmpeg()
+                .on("error", (error) => {
+                    reject(
+                        new Error(`Error when joining the audios: ${error.message}`)
+                    )
+                })
+                .on("end", () => {
+                    resolve()
+                })
+    
+            for (const audioFilePath of audioFilePaths) {
+                audio.input(audioFilePath)
+            }
+      
+            audio.mergeToFile(outputFilePath)
+        })
+    }
+      
+    function changeAudioVolume(inputPath, volume, outputPath) {
+        return new Promise((resolve, reject) => {
+            ffmpeg()
+                .input(inputPath)
+                .audioFilters(`volume=${volume}`)
+                .on("error", (error) => {
+                    return reject(
+                    new Error(`Erro ao alterar o volume: ${error.message}`)
+                    )
+                })
+                .on("end", () => {
+                    return resolve()
+                })
+                .output(outputPath)
+                .run()
+        })
+    }
+    
+    function cutAudio(inputPath, startTime, duration, outputPath) {
+        return new Promise((resolve, reject) => {
+          ffmpeg()
+            .input(inputPath)
+            .setStartTime(startTime)
+            .setDuration(duration)
+            .on("error", (error) => {
+                return reject(
+                    new Error(`Error cutting audio: ${error.message}`)
+                )
+            })
+            .on("end", () => {
+                return resolve("Audio successfully cut!")
+            })
+            .output(outputPath)
+            .run()
+        })
+    }
 })

@@ -5,6 +5,7 @@ const digits = "0123456789"
 const specialCharacters = "!@#$%&*()_-=+-,.;/\\'\"`"
 
 function choiceAtRandom(interable) {
+    console.log(interable);
     const randomIndex = Math.floor(Math.random() * interable.length)
     const randomChoice = interable[randomIndex]
     return randomChoice

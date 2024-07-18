@@ -4,12 +4,12 @@ import input from './inputhandler.js'
 
 export default (async () => {
   const content = {
-    maximumSentences: 7
+    maximumSentences: 10
   }
-
-  content.prefix = input.getSearchInput('Type a Wikipedia search term: ');
-  content.searchTerm = askAndReturnPrefix()
-   state.save(content)
+  
+  content.searchTerm = input.getSearchInput('Type a Wikipedia search term: '); 
+  content.prefix = askAndReturnPrefix()
+  state.save(content)
 
   function askAndReturnPrefix() {
     const prefixes = ['Who is', 'What is', 'The history of']
